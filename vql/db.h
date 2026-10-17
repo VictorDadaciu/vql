@@ -257,7 +257,7 @@ public:
     template<Selection S> static constexpr bool matches() noexcept;
     template<Selection S> static constexpr bool contains() noexcept;
 
-    VEER_STRONG_TYPEDEF(size_t, index);
+    VQL_STRONG_TYPEDEF(size_t, index);
 
     class row final
     {
@@ -846,7 +846,7 @@ private:
 };
 }
 
-#define VEER_DERIVE_PROP(name, base)                           \
+#define VQL_DERIVE_PROP(name, base)                           \
 struct name : public base                                       \
 {                                                               \
     static_assert(vql::PropertyBranch<base>);                    \
@@ -855,53 +855,53 @@ struct name : public base                                       \
     using property_type = name;                                 \
 }
 
-#define VEER_TABLE(...) vql::table<__VA_ARGS__>
+#define VQL_TABLE(...) vql::table<__VA_ARGS__>
 
-#define VEER_PACKED_COLUMN(...) vql::packed_column<__VA_ARGS__>
-#define VEER_PADDED_COLUMN(...) vql::padded_column<__VA_ARGS__>
+#define VQL_PACKED_COLUMN(...) vql::packed_column<__VA_ARGS__>
+#define VQL_PADDED_COLUMN(...) vql::padded_column<__VA_ARGS__>
 
-#define VEER_IMPL(prop) vql::property_impl<prop>
-#define VEER_IMPL_AS(prop, underlying) vql::property_impl<prop, underlying>
-#define VEER_COLUMN_IMPL(prop) VEER_PACKED_COLUMN(VEER_IMPL(prop))
-#define VEER_COLUMN_IMPL_AS(prop, underlying) VEER_PACKED_COLUMN(VEER_IMPL_AS(prop, underlying))
+#define VQL_IMPL(prop) vql::property_impl<prop>
+#define VQL_IMPL_AS(prop, underlying) vql::property_impl<prop, underlying>
+#define VQL_COLUMN_IMPL(prop) VQL_PACKED_COLUMN(VQL_IMPL(prop))
+#define VQL_COLUMN_IMPL_AS(prop, underlying) VQL_PACKED_COLUMN(VQL_IMPL_AS(prop, underlying))
 
-#define VEER_SELECT(...)        vql::select<__VA_ARGS__>
-#define VEER_DONT_SELECT(...)   vql::dont_select<__VA_ARGS__>
-#define VEER_FROM(...)          vql::from<__VA_ARGS__>
-#define VEER_NOT_FROM(...)      vql::not_from<__VA_ARGS__>
+#define VQL_SELECT(...)        vql::select<__VA_ARGS__>
+#define VQL_DONT_SELECT(...)   vql::dont_select<__VA_ARGS__>
+#define VQL_FROM(...)          vql::from<__VA_ARGS__>
+#define VQL_NOT_FROM(...)      vql::not_from<__VA_ARGS__>
 
-#define VEER_IF_DECLTYPE_IS(auto_var, type) if constexpr (std::meta::dealias(std::meta::remove_cvref(^^decltype(auto_var))) == ^^type)
-#define VEER_ELSE_IF_DECLTYPE_IS(auto_var, type) else VEER_IF_DECLTYPE_IS(auto_var, type)
-#define VEER_PARAM_TYPE(param) std::remove_reference_t<std::remove_cv_t<decltype(param)>>
+#define VQL_IF_DECLTYPE_IS(auto_var, type) if constexpr (std::meta::dealias(std::meta::remove_cvref(^^decltype(auto_var))) == ^^type)
+#define VQL_ELSE_IF_DECLTYPE_IS(auto_var, type) else VQL_IF_DECLTYPE_IS(auto_var, type)
+#define VQL_PARAM_TYPE(param) std::remove_reference_t<std::remove_cv_t<decltype(param)>>
 
-#define VEER_PROPERTY_ROOT(underlying) vql::property_root<underlying>
+#define VQL_PROPERTY_ROOT(underlying) vql::property_root<underlying>
 
-#define VEER_DECLARE_LABEL(name) struct name : public vql::label_root
+#define VQL_DECLARE_LABEL(name) struct name : public vql::label_root
 
 
-#ifndef VEER_DONT_STRIP_PREFIX
-#define TABLE                       VEER_TABLE
+#ifndef VQL_DONT_STRIP_PREFIX
+#define TABLE                       VQL_TABLE
 
-#define PACKED_COLUMN               VEER_PACKED_COLUMN
-#define PADDED_COLUMN               VEER_PADDED_COLUMN
+#define PACKED_COLUMN               VQL_PACKED_COLUMN
+#define PADDED_COLUMN               VQL_PADDED_COLUMN
 
-#define IMPL                        VEER_IMPL
-#define IMPL_AS                     VEER_IMPL_AS
-#define COLUMN_IMPL                 VEER_COLUMN_IMPL
-#define COLUMN_IMPL_AS              VEER_COLUMN_IMPL_AS
+#define IMPL                        VQL_IMPL
+#define IMPL_AS                     VQL_IMPL_AS
+#define COLUMN_IMPL                 VQL_COLUMN_IMPL
+#define COLUMN_IMPL_AS              VQL_COLUMN_IMPL_AS
 
-#define SELECT                      VEER_SELECT
-#define DONT_SELECT                 VEER_DONT_SELECT
-#define FROM                        VEER_FROM
-#define NOT_FROM                        VEER_NOT_FROM
+#define SELECT                      VQL_SELECT
+#define DONT_SELECT                 VQL_DONT_SELECT
+#define FROM                        VQL_FROM
+#define NOT_FROM                        VQL_NOT_FROM
 
-#define PARAM_TYPE                  VEER_PARAM_TYPE
-#define IF_DECLTYPE_IS              VEER_IF_DECLTYPE_IS
-#define ELSE_IF_DECLTYPE_IS         VEER_ELSE_IF_DECLTYPE_IS
+#define PARAM_TYPE                  VQL_PARAM_TYPE
+#define IF_DECLTYPE_IS              VQL_IF_DECLTYPE_IS
+#define ELSE_IF_DECLTYPE_IS         VQL_ELSE_IF_DECLTYPE_IS
 
-#define PROPERTY_ROOT               VEER_PROPERTY_ROOT
-#define DERIVE_PROP                 VEER_DERIVE_PROP
-#define DECLARE_LABEL               VEER_DECLARE_LABEL
+#define PROPERTY_ROOT               VQL_PROPERTY_ROOT
+#define DERIVE_PROP                 VQL_DERIVE_PROP
+#define DECLARE_LABEL               VQL_DECLARE_LABEL
 #endif
 
 #include "detail/db.inl"

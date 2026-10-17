@@ -4,8 +4,6 @@ add_executable(vql_tests test_runner.cpp)
 
 target_link_libraries(vql_tests vql)
 
-
-
 option(VQL_RUN_TESTS "Run tests after build" ${VQL_IS_TOP_LEVEL})
 if (${VQL_RUN_TESTS})
     message("Will run tests after build")

@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace ve
+namespace vql
 {
 using meta_info = std::meta::info;
 using meta_infos = std::vector<meta_info>;
@@ -849,34 +849,34 @@ private:
 #define VEER_DERIVE_PROP(name, base)                           \
 struct name : public base                                       \
 {                                                               \
-    static_assert(ve::PropertyBranch<base>);                    \
+    static_assert(vql::PropertyBranch<base>);                    \
     using target_type = base::target_type;                      \
     using property_root_type = base::property_root_type;        \
     using property_type = name;                                 \
 }
 
-#define VEER_TABLE(...) ve::table<__VA_ARGS__>
+#define VEER_TABLE(...) vql::table<__VA_ARGS__>
 
-#define VEER_PACKED_COLUMN(...) ve::packed_column<__VA_ARGS__>
-#define VEER_PADDED_COLUMN(...) ve::padded_column<__VA_ARGS__>
+#define VEER_PACKED_COLUMN(...) vql::packed_column<__VA_ARGS__>
+#define VEER_PADDED_COLUMN(...) vql::padded_column<__VA_ARGS__>
 
-#define VEER_IMPL(prop) ve::property_impl<prop>
-#define VEER_IMPL_AS(prop, underlying) ve::property_impl<prop, underlying>
+#define VEER_IMPL(prop) vql::property_impl<prop>
+#define VEER_IMPL_AS(prop, underlying) vql::property_impl<prop, underlying>
 #define VEER_COLUMN_IMPL(prop) VEER_PACKED_COLUMN(VEER_IMPL(prop))
 #define VEER_COLUMN_IMPL_AS(prop, underlying) VEER_PACKED_COLUMN(VEER_IMPL_AS(prop, underlying))
 
-#define VEER_SELECT(...)        ve::select<__VA_ARGS__>
-#define VEER_DONT_SELECT(...)   ve::dont_select<__VA_ARGS__>
-#define VEER_FROM(...)          ve::from<__VA_ARGS__>
-#define VEER_NOT_FROM(...)      ve::not_from<__VA_ARGS__>
+#define VEER_SELECT(...)        vql::select<__VA_ARGS__>
+#define VEER_DONT_SELECT(...)   vql::dont_select<__VA_ARGS__>
+#define VEER_FROM(...)          vql::from<__VA_ARGS__>
+#define VEER_NOT_FROM(...)      vql::not_from<__VA_ARGS__>
 
 #define VEER_IF_DECLTYPE_IS(auto_var, type) if constexpr (std::meta::dealias(std::meta::remove_cvref(^^decltype(auto_var))) == ^^type)
 #define VEER_ELSE_IF_DECLTYPE_IS(auto_var, type) else VEER_IF_DECLTYPE_IS(auto_var, type)
 #define VEER_PARAM_TYPE(param) std::remove_reference_t<std::remove_cv_t<decltype(param)>>
 
-#define VEER_PROPERTY_ROOT(underlying) ve::property_root<underlying>
+#define VEER_PROPERTY_ROOT(underlying) vql::property_root<underlying>
 
-#define VEER_DECLARE_LABEL(name) struct name : public ve::label_root
+#define VEER_DECLARE_LABEL(name) struct name : public vql::label_root
 
 
 #ifndef VEER_DONT_STRIP_PREFIX

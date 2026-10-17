@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-namespace ve
+namespace vql
 {
 consteval bool has_physical_size(meta_info r)
 {

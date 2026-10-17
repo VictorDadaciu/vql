@@ -78,7 +78,7 @@ endif()
 
 option(VQL_TESTS "Build tests" ON)
 if (${VQL_TESTS})
-    message("Configuring veer tests...")
+    message("Configuring vql tests...")
     add_subdirectory(tests)
 endif()
 

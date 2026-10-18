@@ -1,6 +1,8 @@
 #include <iostream>
 
-#include "../vql/tuple.h"
+#include <vtl/suite.h>
+
+#include <vql/tuple.h>
 
 int main()
 {

@@ -1,0 +1,38 @@
+cmake_minimum_required(VERSION 3.21..4.0)
+
+file(GLOB GLOB_DIRS LIST_DIRECTORIES true extern/*)
+set(VQL_SUBMODULE_PATHS "")
+foreach(GLOB_DIR ${GLOB_DIRS})
+    if(IS_DIRECTORY ${GLOB_DIR})
+        list(APPEND VQL_SUBMODULE_PATHS ${GLOB_DIR})
+    endif()
+endforeach()
+
+option(GIT_SUBMODULE "Check submodules during build" ON)
+function(verify_submodules)
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+        if(GIT_SUBMODULE)
+            message(STATUS "Submodule update")
+            execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                            RESULT_VARIABLE GIT_SUBMOD_RESULT)
+            if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+                message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+            endif()
+
+            set(KNOWN_EXCEPTIONS cppunit)
+            foreach(SUBMODULE_PATH ${VQL_SUBMODULE_PATHS})
+                cmake_path(GET SUBMODULE_PATH STEM SUBMODULE_NAME)
+                message("Verifying submodule ${SUBMODULE_NAME}...")
+                if((${SUBMODULE_NAME} NOT IN_LIST ${KNOWN_EXCEPTIONS}) AND (NOT EXISTS "${SUBMODULE_PATH}/CMakeLists.txt"))
+                    message(FATAL_ERROR "The submodule ${SUBMODULE_PATH} was not downloaded correctly! Please update submodules and try again.")
+                endif()
+            endforeach()
+        endif()
+    endif()
+endfunction()
+
+verify_submodules()
+
+add_subdirectory(extern/vtl)

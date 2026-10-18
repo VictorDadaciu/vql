@@ -15,6 +15,7 @@ if (PROJECT_IS_TOP_LEVEL)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+include(submodules)
 
 add_library(vql INTERFACE
     vql/db.h
@@ -36,6 +37,7 @@ target_compile_options(vql
 
 target_include_directories(vql
     INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/vql>
 )
 

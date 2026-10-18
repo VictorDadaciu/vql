@@ -1,0 +1,6 @@
+[submodule "extern"]
+	path = extern
+	url = git@github.com:VictorDadaciu/vtl.git
+[submodule "extern/vtl"]
+	path = extern/vtl
+	url = git@github.com:VictorDadaciu/vtl.git

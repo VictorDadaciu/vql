@@ -3,38 +3,18 @@
 #include "utils.h"
 
 #include <cassert>
-#include <concepts>
 #include <limits>
-#include <meta>
 #include <numeric>
 #include <ranges>
 #include <tuple>
-#include <type_traits>
 #include <vector>
 
 namespace vql
 {
-using meta_info = std::meta::info;
-using meta_infos = std::vector<meta_info>;
-
-struct null_type final {};
-
-template<typename T>
-struct debug_type;
-
-template<typename... Ts>
-struct typelist { static constexpr size_t count = sizeof...(Ts); };
-
-consteval bool has_physical_size(meta_info);
-consteval bool is_template_of(meta_info, meta_info);
-consteval bool is_in_types(meta_info, meta_infos);
 consteval bool is_label(meta_info);
 consteval bool is_property(meta_info);
 consteval bool is_in_property_tree(meta_info);
-consteval bool is_descendent_of(meta_info, meta_info);
-consteval bool is_nested_in(meta_info, meta_info);
 
-consteval meta_info base_of(meta_info, size_t=0zu);
 consteval meta_info table_from(meta_info);
 
 consteval meta_infos get_columns(auto);

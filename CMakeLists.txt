@@ -18,8 +18,10 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 add_library(vql INTERFACE
     vql/db.h
+    vql/tuple.h
     vql/utils.h
     vql/detail/db.inl
+    vql/detail/utils.inl
 )
 
 set_property(TARGET vql

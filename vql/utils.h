@@ -1,26 +1,33 @@
 #pragma once
 
+#include <meta>
 #include <memory>
 
 namespace vql
 {
-static constexpr size_t cache_line_size = 64zu;
-constexpr size_t next_multiple_of_cache_line_size(size_t x)
-{
-    return (x + cache_line_size - 1) & -cache_line_size;
-}
+using meta_info = std::meta::info;
+using meta_infos = std::vector<meta_info>;
 
-constexpr size_t next_power_of_2(size_t x)
-{
-    --x;
-    x |= x >> 1;
-    x |= x >> 2;
-    x |= x >> 4;
-    x |= x >> 8;
-    x |= x >> 16;
-    x |= x >> 32;
-    return ++x;
-}
+struct null_type final {};
+
+template<typename T>
+struct debug_type;
+
+template<typename... Ts>
+struct typelist { static constexpr size_t count = sizeof...(Ts); };
+
+static constexpr size_t cache_line_size = 64zu;
+
+constexpr size_t next_multiple_of_cache_line_size(size_t);
+constexpr size_t next_power_of_2(size_t);
+
+consteval bool has_physical_size(meta_info);
+consteval bool is_template_of(meta_info, meta_info);
+consteval bool is_in_types(meta_info, meta_infos);
+consteval bool is_descendent_of(meta_info, meta_info);
+consteval bool is_nested_in(meta_info, meta_info);
+
+consteval meta_info base_of(meta_info, size_t=0zu);
 
 struct alignas(cache_line_size) cache_aligned_bytes
 {
@@ -85,3 +92,5 @@ public:                                                                    \
         return value >= rhs.value;                                         \
     }                                                                      \
 }
+
+#include "detail/utils.inl"

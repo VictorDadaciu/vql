@@ -111,7 +111,7 @@ namespace detail
     template <Tuple T, size_t... I>
     constexpr bool _compare_neq(const T& a, const T& b, const std::index_sequence<I...>&)
     {
-        return ((a.template get<I>() != b.template get<I>()) && ...);
+        return ((a.template get<I>() != b.template get<I>()) || ...);
     }
 }
 
@@ -170,13 +170,13 @@ inline constexpr const auto& get(const T& t) noexcept
 template<typename... Ts>
 constexpr tuple<Ts...> make_tuple(Ts&&... args)
 {
-    return tuple<Ts...>(std::forward<Ts...>(args...));
+    return tuple<std::unwrap_ref_decay_t<Ts>...>(std::forward<Ts>(args)...);
 }
 
 template<typename T> requires (is_template_of(^^T, ^^typelist))
 constexpr auto make_tuple()
 {
-    return typename[:std::meta::substitute(^^tuple, template_arguments_of(^^T)):]();
+    return typename[:std::meta::substitute(^^tuple, template_arguments_of(^^T)):]{};
 }
 
 namespace detail

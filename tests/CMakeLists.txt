@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.21..4.4)
 
-add_executable(vql_tests test_runner.cpp)
+add_executable(vql_tests
+    test_runner.cpp
+    unit/tuple_tests.cpp
+)
 
 target_link_libraries(vql_tests
     vql
-    vtl
+    vtl::vtl
 )
 
 option(VQL_RUN_TESTS "Run tests after build" ${VQL_IS_TOP_LEVEL})

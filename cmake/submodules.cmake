@@ -35,4 +35,8 @@ endfunction()
 
 verify_submodules()
 
-add_subdirectory(extern/vtl)
+find_package(vtl PATHS ~/.local)
+if (NOT ${VTL_FOUND})
+    message("Getting vtl from subomdule")
+    add_subdirectory(extern/vtl)
+endif()

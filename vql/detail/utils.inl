@@ -2,6 +2,15 @@
 
 namespace vql
 {
+consteval bool are_unique(const std::vector<size_t>& nums)
+{
+    for (size_t i = 0zu; i < nums.size() - 1; ++i)
+        for (size_t j = i + 1; i < nums.size(); ++j)
+            if (nums[i] == nums[j])
+                return false;
+    return true;
+}
+
 constexpr size_t next_multiple_of_cache_line_size(size_t x)
 {
     return (x + cache_line_size - 1) & -cache_line_size;
@@ -61,6 +70,33 @@ consteval bool is_descendent_of(meta_info descendent, meta_info ancestor)
 consteval bool is_nested_in(meta_info nested, meta_info nest)
 {
     return has_parent(nested) && is_template_of(parent_of(nested), nest);
+}
+
+consteval bool is_set(meta_infos types)
+{
+    for (size_t i = 0; i < types.size() - 1; ++i)
+        for (size_t j = i + 1; j < types.size(); ++j)
+            if (types[i] == types[j])
+                return false;
+    return true;
+}
+
+consteval bool is_subset_of(meta_infos inner, meta_infos outer)
+{
+    for (meta_info i : inner)
+    {
+        bool found = false;
+        for (meta_info o : outer)
+        {
+            if (i == o)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+    }
+    return true;
 }
 
 consteval meta_info base_of(meta_info r, size_t index)

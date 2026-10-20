@@ -826,10 +826,10 @@ private:
 };
 }
 
-#define VQL_DERIVE_PROP(name, base)                           \
+#define VQL_DERIVE_PROP(name, base)                             \
 struct name : public base                                       \
 {                                                               \
-    static_assert(vql::PropertyBranch<base>);                    \
+    static_assert(vql::PropertyBranch<base>);                   \
     using target_type = base::target_type;                      \
     using property_root_type = base::property_root_type;        \
     using property_type = name;                                 \

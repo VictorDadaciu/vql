@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.21..4.4)
 
 add_executable(vql_tests
     test_runner.cpp
+    unit/toa_tests.cpp
     unit/tuple_tests.cpp
 )
 

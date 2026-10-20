@@ -18,6 +18,8 @@ struct typelist { static constexpr size_t count = sizeof...(Ts); };
 
 static constexpr size_t cache_line_size = 64zu;
 
+consteval bool are_unique(std::vector<size_t>);
+
 constexpr size_t next_multiple_of_cache_line_size(size_t);
 constexpr size_t next_power_of_2(size_t);
 
@@ -26,6 +28,8 @@ consteval bool is_template_of(meta_info, meta_info);
 consteval bool is_in_types(meta_info, meta_infos);
 consteval bool is_descendent_of(meta_info, meta_info);
 consteval bool is_nested_in(meta_info, meta_info);
+consteval bool is_set(meta_infos);
+consteval bool is_subset_of(meta_infos, meta_infos);
 
 consteval meta_info base_of(meta_info, size_t=0zu);
 

@@ -19,10 +19,9 @@ include(submodules)
 
 add_library(vql INTERFACE
     vql/db.h
+    vql/toa.h
     vql/tuple.h
     vql/utils.h
-    vql/detail/db.inl
-    vql/detail/utils.inl
 )
 
 set_property(TARGET vql

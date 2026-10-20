@@ -31,15 +31,17 @@ struct suite_helper<vql::tuple<Ts...>>
 };
 }
 
-struct nontrivial
+namespace
 {
+struct nontrivial
+    {
     inline static size_t constructed = 0zu;
     inline static size_t copy_constructed = 0zu;
     inline static size_t move_constructed = 0zu;
     inline static size_t copy_assigned = 0zu;
     inline static size_t move_assigned = 0zu;
     inline static size_t destructed = 0zu;
-
+    
     inline static void reset()
     {
         constructed = 0zu;
@@ -49,43 +51,44 @@ struct nontrivial
         move_assigned = 0zu;
         destructed = 0zu;
     }
-
+    
     nontrivial(size_t other = 0zu) : x(other)
     {
         ++constructed;
     }
-
+    
     nontrivial(const nontrivial& other) : x(other.x)
     {
         ++copy_constructed;
     }
-
+    
     nontrivial(nontrivial&& other) : x(other.x)
     {
         ++move_constructed;
     }
-
+    
     nontrivial& operator=(const nontrivial& other)
     {
         x = other.x;
         ++copy_assigned;
         return *this;
     }
-
+    
     nontrivial& operator=(nontrivial&& other)
     {
         x = other.x;
         ++move_assigned;
         return *this;
     }
-
+    
     ~nontrivial()
     {
         ++destructed;
     }
-
+    
     size_t x;
 };
+}
 
 inline bool operator==(const nontrivial& a, const nontrivial& b) noexcept
 {
@@ -223,22 +226,16 @@ public:
 
     void get_set_element()
     {
-        vql::tuple<int, char, size_t, int, size_t> t{};
+        vql::tuple<int, char, size_t> t{};
         VTL_EQUALS(t.get<0>(), 0);
         VTL_EQUALS(t.get<1>(), '\0');
         VTL_EQUALS(t.get<2>(), 0zu);
-        VTL_EQUALS(t.get<3>(), 0);
-        VTL_EQUALS(t.get<4>(), 0zu);
         t.get<0>() = 1;
         t.get<1>() = 'c';
         t.get<2>() = 1zu;
-        t.get<3>() = 2;
-        t.get<4>() = 2zu;
         VTL_EQUALS(t.get<int>(), 1);
         VTL_EQUALS(t.get<char>(), 'c');
         VTL_EQUALS(t.get<size_t>(), 1zu);
-        VTL_EQUALS((t.get<int, 1>()), 2);
-        VTL_EQUALS((t.get<size_t, 1>()), 2zu);
     }
 
     void comparison()
@@ -246,7 +243,7 @@ public:
         vql::tuple<int, int> t1;
         vql::tuple<int, int> t2;
         VTL_EQUALS(t1, t2);
-        t1.get<int, 1>() = 1;
+        t1.get<1>() = 1;
         VTL_ASSERT(t1 != t2);
     }
 };

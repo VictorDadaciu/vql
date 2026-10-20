@@ -27,9 +27,11 @@ class tuple
     }
     storage m_data;
 
+    static constexpr bool is_unique = is_set({ ^^Ts... });
     static constexpr auto members = std::define_static_array(nonstatic_data_members_of(^^storage, std::meta::access_context::unchecked()));
 
     static consteval size_t index_of_type(meta_info, size_t=0zu) noexcept;
+
 
 public:
     static constexpr size_t size = sizeof...(Ts);
@@ -63,28 +65,12 @@ public:
         requires(std::is_move_assignable_v<Ts> && ...) = default;
 
     template<size_t I> requires(I < sizeof...(Ts))
-    constexpr auto& get() noexcept
-    {
-        return m_data.[:members[I]:];
-    }
-
+    constexpr auto& get() noexcept { return m_data.[:members[I]:]; }
     template<size_t I> requires(I < sizeof...(Ts))
-    constexpr const auto& get() const noexcept
-    {
-        return m_data.[:members[I]:];
-    }
+    constexpr const auto& get() const noexcept { return m_data.[:members[I]:]; }
 
-    template<typename T, size_t I=0zu>
-    constexpr auto& get() noexcept
-    {
-        return get<index_of_type(^^T, I)>();
-    }
-
-    template<typename T, size_t I=0zu>
-    constexpr const auto& get() const noexcept
-    {
-        return get<index_of_type(^^T, I)>();
-    }
+    template<typename T> constexpr auto& get() noexcept requires(is_unique) { return get<index_of_type(^^T)>(); }
+    template<typename T> constexpr const auto& get() const noexcept requires(is_unique) { return get<index_of_type(^^T)>(); }
     
     void swap(tuple& other) noexcept((std::is_nothrow_swappable_v<Ts> && ...))
     {
@@ -95,6 +81,9 @@ public:
     {
         template for (constexpr size_t I : std::views::iota(0zu, size)) std::swap(get<I>(), other.get<I>());
     }
+
+    friend void swap(tuple& a, tuple& b) noexcept { a.swap(b); }
+    friend constexpr void swap(const tuple& a, const tuple& b) noexcept { a.swap(b); }
 };
 
 template <class T>
@@ -129,18 +118,6 @@ inline constexpr bool operator!=(const tuple<Ts...>& a, const tuple<Ts...>& b) n
 {
     static constexpr auto indices = std::make_index_sequence<sizeof...(Ts)>();
     return detail::_compare_neq(a, b, indices);
-}
-
-template <Tuple T>
-inline void swap(T& a, T& b) noexcept
-{
-    a.swap(b);
-}
-
-template <Tuple T>
-inline constexpr void swap(const T& a, const T& b) noexcept
-{
-    a.swap(b);
 }
 
 template <size_t I, Tuple T>

@@ -32,7 +32,6 @@ class tuple
 
     static consteval size_t index_of_type(meta_info, size_t=0zu) noexcept;
 
-
 public:
     static constexpr size_t size = sizeof...(Ts);
 
@@ -145,7 +144,7 @@ inline constexpr const auto& get(const T& t) noexcept
 }
 
 template<typename... Ts>
-constexpr tuple<Ts...> make_tuple(Ts&&... args)
+constexpr tuple<std::unwrap_ref_decay_t<Ts>...> make_tuple(Ts&&... args)
 {
     return tuple<std::unwrap_ref_decay_t<Ts>...>(std::forward<Ts>(args)...);
 }

@@ -31,6 +31,24 @@ toa<Ts...>::toa(size_t initial_capacity) : m_capacity(initial_capacity), m_count
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
+toa<Ts...>::toa(size_t initial_count, const tuple<Ts...>& t) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+    : m_capacity(calculate_new_capacity_for(initial_count)), m_count(0zu)
+{
+    assert(m_capacity > 0zu);
+    allocate_and_initialize_views();
+    append(initial_count, t);
+}
+
+template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
+toa<Ts...>::toa(size_t initial_count, const Ts&... args) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+    : m_capacity(calculate_new_capacity_for(initial_count)), m_count(0zu)
+{
+    assert(m_capacity > 0zu);
+    allocate_and_initialize_views();
+    append(initial_count, args...);
+}
+
+template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
 toa<Ts...>::toa(const toa& other) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
     : m_capacity(other.m_capacity), m_count(other.m_count)
 {
@@ -93,112 +111,173 @@ constexpr size_t toa<Ts...>::calculate_new_capacity_for(size_t needed) const noe
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-std::pair<size_t, size_t> toa<Ts...>::reallocate_if_needed(size_t extra)
+std::pair<size_t, size_t> toa<Ts...>::reallocate_if_needed(size_t n)
 {
-    size_t n = m_count + extra;
     if (n > m_capacity) reallocate(calculate_new_capacity_for(n));
     return {m_count, n};
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::push_back()  noexcept ((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...)
+size_t toa<Ts...>::push_back()  noexcept((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...)
 {
-    auto [ret, m] = reallocate_if_needed(1zu);
-    m_count = m;
-    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(get<I>() + ret);
-    return ret;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + 1zu);
+    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(std::to_address(end<I>()));
+    m_count = new_count;
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::push_back(const tuple<Ts...>& t) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+size_t toa<Ts...>::push_back(const tuple<Ts...>& t) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
 {
-    auto [ret, m] = reallocate_if_needed(1zu);
-    m_count = m;
-    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(get<I>() + ret, t.template get<I>());
-    return ret;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + 1zu);
+    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(std::to_address(end<I>()), t.template get<I>());
+    m_count = new_count;
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
 size_t toa<Ts...>::push_back(tuple<Ts...>&& t) noexcept
 {
-    auto [ret, m] = reallocate_if_needed(1zu);
-    m_count = m;
-    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(get<I>() + ret, std::move(t.template get<I>()));
-    return ret;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + 1zu);
+    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(std::to_address(end<I>()), std::move(t.template get<I>()));
+    m_count = new_count;
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::push_back(const Ts&... args) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+size_t toa<Ts...>::push_back(const Ts&... args) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
 {
-    auto [ret, m] = reallocate_if_needed(1zu);
-    m_count = m;
-    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(get<I>() + ret, args...[I]);
-    return ret;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + 1zu);
+    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(std::to_address(end<I>()), args...[I]);
+    m_count = new_count;
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
 size_t toa<Ts...>::push_back(Ts&&... args) noexcept
 {
-    auto [ret, m] = reallocate_if_needed(1zu);
-    m_count = m;
-    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(get<I>() + ret, std::move(args...[I]));
-    return ret;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + 1zu);
+    template for (constexpr size_t I : std::views::iota(0zu, size)) std::construct_at(std::to_address(end<I>()), std::move(args...[I]));
+    m_count = new_count;
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::append(size_t n) noexcept ((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...)
+size_t toa<Ts...>::append(size_t n) noexcept((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...)
 {
-    assert(n > 0zu);
-    auto [ret, m] = reallocate_if_needed(n);
-    m_count = m;
+    if (n == 0zu) return m_count;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + n);
+    m_count = new_count;
     template for (constexpr size_t I : std::views::iota(0zu, size))
-        for (auto it = begin<I>() + ret; it != end<I>(); it++)
-            std::construct_at(it);
-    return ret;
+        for (auto it = begin<I>() + old_count; it != end<I>(); it++)
+            std::construct_at(std::to_address(it));
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::append(size_t n, const tuple<Ts...>& t) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+size_t toa<Ts...>::append(size_t n, const tuple<Ts...>& t) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
 {
-    assert(n > 0zu);
-    auto [ret, m] = reallocate_if_needed(n);
-    m_count = m;
+    if (n == 0zu) return m_count;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + n);
+    m_count = new_count;
     template for (constexpr size_t I : std::views::iota(0zu, size))
-        for (auto it = begin<I>() + ret; it != end<I>(); it++)
-            std::construct_at(it, t.template get<I>());
-    return ret;
+        for (auto it = begin<I>() + old_count; it != end<I>(); it++)
+            std::construct_at(std::to_address(it), t.template get<I>());
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::append(size_t n, const Ts&... args) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+size_t toa<Ts...>::append(size_t n, const Ts&... args) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
 {
-    assert(n > 0zu);
-    auto [ret, m] = reallocate_if_needed(n);
-    m_count = m;
+    if (n == 0zu) return m_count;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + n);
+    m_count = new_count;
     template for (constexpr size_t I : std::views::iota(0zu, size))
-        for (auto it = begin<I>() + ret; it != end<I>(); it++)
-            std::construct_at(it, args...[I]);
-    return ret;
+        for (auto it = begin<I>() + old_count; it != end<I>(); it++)
+            std::construct_at(std::to_address(it), args...[I]);
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
-size_t toa<Ts...>::append(const toa& other) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+size_t toa<Ts...>::append(const toa& other) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
 {
-    auto [ret, m] = reallocate_if_needed(other.m_count);
-    m_count = m;
+    if (other.m_count == 0zu) return m_count;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + other.m_count);
     template for (constexpr size_t I : std::views::iota(0zu, size))
-        std::uninitialized_copy(other.template cbegin<I>(), other.template cend<I>(), begin<I>() + ret);
-    return ret;
+        std::uninitialized_copy(other.template cbegin<I>(), other.template cend<I>(), end<I>());
+    m_count = new_count;
+    return old_count;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
 size_t toa<Ts...>::append(toa&& other) noexcept
 {
-    auto [ret, m] = reallocate_if_needed(other.m_count);
-    m_count = m;
+    if (other.m_count == 0zu) return m_count;
+    auto [old_count, new_count] = reallocate_if_needed(m_count + other.m_count);
     template for (constexpr size_t I : std::views::iota(0zu, size))
-        std::uninitialized_move(other.template cbegin<I>(), other.template cend<I>(), begin<I>() + ret);
-    return ret;
+        std::uninitialized_move(other.template cbegin<I>(), other.template cend<I>(), end<I>());
+    m_count = new_count;
+    return old_count;
+}
+
+template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
+void toa<Ts...>::resize(size_t n) noexcept((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...)
+{
+    if (n == m_count) return;
+    auto [old_count, new_count] = reallocate_if_needed(n);
+    if (old_count < new_count)
+    {
+        m_count = new_count;
+        template for (constexpr size_t I : std::views::iota(0zu, size))
+            for (auto it = begin<I>() + old_count; it != end<I>(); it++)
+                std::construct_at(std::to_address(it));
+    }
+    else
+    {
+        template for (constexpr size_t I : std::views::iota(0zu, size))
+            std::destroy(cbegin<I>() + new_count, cend<I>());
+        m_count = new_count;
+    }
+}
+
+template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
+void toa<Ts...>::resize(size_t n, const tuple<Ts...>& t) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+{
+    if (n == m_count) return;
+    auto [old_count, new_count] = reallocate_if_needed(n);
+    if (old_count < new_count)
+    {
+        m_count = new_count;
+        template for (constexpr size_t I : std::views::iota(0zu, size))
+            for (auto it = begin<I>() + old_count; it != end<I>(); it++)
+                std::construct_at(std::to_address(it));
+    }
+    else
+    {
+        template for (constexpr size_t I : std::views::iota(0zu, size))
+            std::destroy(cbegin<I>() + new_count, cend<I>());
+        m_count = new_count;
+    }
+}
+
+template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
+void toa<Ts...>::resize(size_t n, const Ts&... args) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...)
+{
+    if (n == m_count) return;
+    auto [old_count, new_count] = reallocate_if_needed(n);
+    if (old_count < new_count)
+    {
+        m_count = new_count;
+        template for (constexpr size_t I : std::views::iota(0zu, size))
+            for (auto it = begin<I>() + old_count; it != end<I>(); it++)
+                std::construct_at(std::to_address(it));
+    }
+    else
+    {
+        template for (constexpr size_t I : std::views::iota(0zu, size))
+            std::destroy(cbegin<I>() + new_count, cend<I>());
+        m_count = new_count;
+    }
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
@@ -208,7 +287,6 @@ void toa<Ts...>::clear() noexcept
         if constexpr (!std::is_trivially_destructible_v<Ts...[I]>)
             std::ranges::destroy(cbegin<I>(), cend<I>());
     m_count = 0zu;
-    m_capacity = 1zu;
 }
 
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))

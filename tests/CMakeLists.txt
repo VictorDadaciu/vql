@@ -8,7 +8,7 @@ add_executable(vql_tests
 
 target_link_libraries(vql_tests
     vql
-    vtl::vtl
+    ${VQL_VTL_TARGET}
 )
 
 option(VQL_RUN_TESTS "Run tests after build" ${VQL_IS_TOP_LEVEL})

@@ -8,7 +8,7 @@
 
 namespace vql
 {
-template <typename T, typename DerivedIt>
+template <typename T>
 class _iterator_base
 {
 public:
@@ -29,31 +29,14 @@ public:
     reference operator*() const { return *m_it; }
     reference operator&() const { return m_it; }
     pointer operator->() const noexcept { return m_it; }
-    operator reference() { return *m_it; }
-    operator pointer() noexcept { return m_it; }
-    operator const reference() const { return *m_it; }
-    operator const pointer() const noexcept { return m_it; }
-    operator bool() const noexcept { return m_it; }
+    explicit operator reference() { return *m_it; }
+    explicit operator pointer() noexcept { return m_it; }
+    explicit operator const reference() const { return *m_it; }
+    explicit operator const pointer() const noexcept { return m_it; }
+    explicit operator bool() const noexcept { return m_it; }
 
-    value_type& operator[](difference_type x) { return m_it[x]; }
-    const value_type& operator[](difference_type x) const { return m_it[x]; }
-
-    DerivedIt& operator++() noexcept
-        requires(requires (DerivedIt& it) { ++it; }) { return ++static_cast<DerivedIt&>(*this); }
-    DerivedIt operator++(int) noexcept
-        requires(requires (DerivedIt& it) { it++; }) { return static_cast<DerivedIt&>(*this)++; }
-    DerivedIt& operator--() noexcept
-        requires(requires (DerivedIt& it) { --it; }) { return --static_cast<DerivedIt&>(*this); }
-    DerivedIt operator--(int) noexcept
-        requires(requires (DerivedIt& it) { it--; }) { return static_cast<DerivedIt&>(*this)--; }
-    DerivedIt& operator+=(difference_type x) noexcept
-        requires(requires (DerivedIt& it, difference_type x) { it += x; }) { return static_cast<DerivedIt&>(*this) += x; }
-    DerivedIt& operator-=(difference_type x) noexcept
-        requires(requires (DerivedIt& it, difference_type x) { it -= x; }) { return static_cast<DerivedIt&>(*this) -= x; }
-    DerivedIt operator+(difference_type x) noexcept
-        requires(requires (DerivedIt& it, difference_type x) { it + x; }) { return static_cast<DerivedIt&>(*this) + x; }
-    DerivedIt operator-(difference_type x) noexcept
-        requires(requires (DerivedIt& it, difference_type x) { it - x; }) { return static_cast<DerivedIt&>(*this) - x; }
+    reference operator[](difference_type x) { return m_it[x]; }
+    const reference operator[](difference_type x) const { return m_it[x]; }
 
     friend bool operator== (const _iterator_base& a, const _iterator_base& b) noexcept { return a.m_it ==  b.m_it; }
     friend bool operator!= (const _iterator_base& a, const _iterator_base& b) noexcept { return a.m_it !=  b.m_it; }
@@ -68,10 +51,10 @@ protected:
 };
 
 template <typename T>
-class _iterator : public _iterator_base<T, _iterator<T>>
+class _iterator : public _iterator_base<T>
 {
 public:
-    using base = _iterator_base<T, _iterator<T>>;
+    using base = _iterator_base<T>;
     using value_type = base::value_type;
     using iterator_category = base::iterator_category;
     using difference_type = base::difference_type;
@@ -82,20 +65,28 @@ public:
     _iterator& operator--() noexcept { --m_it; return *this; }
     _iterator  operator++(int) noexcept { return _iterator(m_it++); }
     _iterator  operator--(int) noexcept { return _iterator(m_it--); }
+    _iterator& operator+=(_iterator other) noexcept { m_it += other.m_it; return *this; }
+    _iterator& operator-=(_iterator other) noexcept { m_it -= other.m_it; return *this; }
+    _iterator& operator+=(pointer x) noexcept { m_it += x; return *this; }
+    _iterator& operator-=(pointer x) noexcept { m_it -= x; return *this; }
     _iterator& operator+=(difference_type x) noexcept { m_it += x; return *this; }
     _iterator& operator-=(difference_type x) noexcept { m_it -= x; return *this; }
-    _iterator  operator+ (difference_type x) noexcept { return _iterator(m_it + x); }
-    _iterator  operator- (difference_type x) noexcept { return _iterator(m_it - x); }
+    friend _iterator operator+ (const _iterator& it, _iterator other) noexcept { return _iterator(it.m_it + other.m_it); }
+    friend _iterator operator- (const _iterator& it, _iterator other) noexcept { return _iterator(it.m_it - other.m_it); }
+    friend _iterator operator+ (const _iterator& it, pointer x) noexcept { return _iterator(it.m_it + x); }
+    friend _iterator operator- (const _iterator& it, pointer x) noexcept { return _iterator(it.m_it - x); }
+    friend _iterator operator+ (const _iterator& it, difference_type x) noexcept { return _iterator(it.m_it + x); }
+    friend _iterator operator- (const _iterator& it, difference_type x) noexcept { return _iterator(it.m_it - x); }
 
 protected:
     using base::m_it;
 };
 
 template <typename T>
-class _reverse_iterator : public _iterator_base<T, _reverse_iterator<T>>
+class _reverse_iterator : public _iterator_base<T>
 {
 public:
-    using base = _iterator_base<T, _reverse_iterator<T>>;
+    using base = _iterator_base<T>;
     using value_type = base::value_type;
     using iterator_category = base::iterator_category;
     using difference_type = base::difference_type;
@@ -108,8 +99,12 @@ public:
     _reverse_iterator  operator--(int) noexcept { return _reverse_iterator(m_it++); }
     _reverse_iterator& operator+=(difference_type x) noexcept { m_it -= x; return *this; }
     _reverse_iterator& operator-=(difference_type x) noexcept { m_it += x; return *this; }
-    _reverse_iterator  operator+ (difference_type x) noexcept { return _reverse_iterator(m_it - x); }
-    _reverse_iterator  operator- (difference_type x) noexcept { return _reverse_iterator(m_it + x); }
+    friend _reverse_iterator operator+ (const _reverse_iterator& it, _reverse_iterator other) noexcept { return __reverse_iterator(it.m_it - other.m_it); }
+    friend _reverse_iterator operator- (const _reverse_iterator& it, _reverse_iterator other) noexcept { return __reverse_iterator(it.m_it + other.m_it); }
+    friend _reverse_iterator operator+ (const _reverse_iterator& it, pointer x) noexcept { return _reverse_iterator(it.m_it - x); }
+    friend _reverse_iterator operator- (const _reverse_iterator& it, pointer x) noexcept { return _reverse_iterator(it.m_it + x); }
+    friend _reverse_iterator operator+ (const _reverse_iterator& it, difference_type x) noexcept { return _reverse_iterator(it.m_it - x); }
+    friend _reverse_iterator operator- (const _reverse_iterator& it, difference_type x) noexcept { return _reverse_iterator(it.m_it + x); }
 
 protected:
     using base::m_it;
@@ -199,7 +194,13 @@ public:
 
     static constexpr size_t size = sizeof...(Ts);
 
-    toa(size_t=1zu);
+    explicit toa(size_t=1zu);
+    toa(size_t, const tuple<Ts...>&)
+        noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...))
+        requires (std::is_copy_constructible_v<Ts> && ...);
+    toa(size_t, const Ts&...)
+        noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...))
+        requires (std::is_copy_constructible_v<Ts> && ...);
     toa(const toa&)
         noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...))
         requires (std::is_copy_constructible_v<Ts> && ...);
@@ -214,8 +215,12 @@ public:
 
     template <size_t I> constexpr auto get() noexcept { return m_views.template get<I>(); }
     template <size_t I> constexpr auto get() const noexcept { return m_views.template get<I>(); }
+    template <size_t I> constexpr Ts...[I]& cell(size_t i) noexcept { assert(i < m_count); return m_views.template get<I>()[i]; }
+    template <size_t I> constexpr const Ts...[I]& cell(size_t i) const noexcept { assert(i < m_count); return m_views.template get<I>()[i]; }
     template <typename T> constexpr auto get() noexcept requires(is_unique) { return m_views.template get<T*>(); }
     template <typename T> constexpr auto get() const noexcept requires(is_unique) { return m_views.template get<T*>(); }
+    template <typename T> constexpr T& cell(size_t i) noexcept requires(is_unique) { assert(i < m_count); return m_views.template get<T*>()[i]; }
+    template <typename T> constexpr const T& cell(size_t i) const noexcept requires(is_unique) { assert(i < m_count); return m_views.template get<T*>()[i]; }
 
     template <size_t I> iterator<Ts...[I]> begin() noexcept { return iterator<Ts...[I]>(m_views.template get<I>()); }
     template <size_t I> iterator<Ts...[I]> end() noexcept { return iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
@@ -227,30 +232,34 @@ public:
     template <typename T> const_iterator<T> cbegin() const noexcept requires(is_unique) { return const_iterator<T>(m_views.template get<T*>()); }
     template <typename T> const_iterator<T> cend() const noexcept requires(is_unique) { return const_iterator<T>(m_views.template get<T*>() + m_count); }
 
-    template <size_t I> reverse_iterator<Ts...[I]> rbegin() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
+    template <size_t I> reverse_iterator<Ts...[I]> rbegin() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() +  + static_cast<int64_t>(m_count) - 1); }
     template <size_t I> reverse_iterator<Ts...[I]> rend() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() - 1); }
-    template <typename T> reverse_iterator<T> rbegin() noexcept requires(is_unique) { return reverse_iterator<T>(m_views.template get<T*>() + m_count); }
+    template <typename T> reverse_iterator<T> rbegin() noexcept requires(is_unique) { return reverse_iterator<T>(m_views.template get<T*>() + static_cast<int64_t>(m_count) - 1); }
     template <typename T> reverse_iterator<T> rend() noexcept requires(is_unique) { return reverse_iterator<T>(m_views.template get<T*>() - 1); }
 
-    template <size_t I> const_reverse_iterator<Ts...[I]> crbegin() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
+    template <size_t I> const_reverse_iterator<Ts...[I]> crbegin() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() + static_cast<int64_t>(m_count) - 1); }
     template <size_t I> const_reverse_iterator<Ts...[I]> crend() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() - 1); }
-    template <typename T> const_reverse_iterator<T> crbegin() const noexcept requires(is_unique) { return const_reverse_iterator<T>(m_views.template get<T*>() + m_count); }
+    template <typename T> const_reverse_iterator<T> crbegin() const noexcept requires(is_unique) { return const_reverse_iterator<T>(m_views.template get<T*>() + static_cast<int64_t>(m_count) - 1); }
     template <typename T> const_reverse_iterator<T> crend() const noexcept requires(is_unique) { return const_reverse_iterator<T>(m_views.template get<T*>() - 1); }
 
     void swap(toa& other) noexcept;
     friend void swap(toa& a, toa& b) noexcept { a.swap(b); }
 
-    size_t push_back() noexcept ((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...);
-    size_t push_back(const tuple<Ts...>&) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
+    size_t push_back() noexcept((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...);
+    size_t push_back(const tuple<Ts...>&) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
     size_t push_back(tuple<Ts...>&&) noexcept;
-    size_t push_back(const Ts&...) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
+    size_t push_back(const Ts&...) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
     size_t push_back(Ts&&...) noexcept;
 
-    size_t append(size_t) noexcept ((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...);
-    size_t append(size_t, const tuple<Ts...>&) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
-    size_t append(size_t, const Ts&...) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
-    size_t append(const toa&) noexcept ((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
+    size_t append(size_t) noexcept((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...);
+    size_t append(size_t, const tuple<Ts...>&) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
+    size_t append(size_t, const Ts&...) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
+    size_t append(const toa&) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
     size_t append(toa&&) noexcept;
+
+    void resize(size_t) noexcept((std::is_nothrow_default_constructible_v<Ts> && ...)) requires (std::is_default_constructible_v<Ts> && ...);
+    void resize(size_t, const tuple<Ts...>&) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
+    void resize(size_t, const Ts&...) noexcept((std::is_nothrow_copy_constructible_v<Ts> && ...)) requires (std::is_copy_constructible_v<Ts> && ...);
 
     void clear() noexcept;
     void reserve(size_t);

@@ -27,7 +27,7 @@ public:
     ~_iterator_base() = default;
 
     reference operator*() const { return *m_it; }
-    reference operator&() const { return m_it; }
+    pointer operator&() const { return m_it; }
     pointer operator->() const noexcept { return m_it; }
     explicit operator reference() { return *m_it; }
     explicit operator pointer() noexcept { return m_it; }
@@ -122,23 +122,19 @@ using const_reverse_iterator = _reverse_iterator<const T>;
 template<typename... Ts> requires (sizeof...(Ts) > 0 && (std::movable<Ts> && ...))
 class toa
 {
-    static constexpr bool is_unique = is_set({ ^^Ts... });
-
     void allocate_and_initialize_views();
     void reallocate(size_t);
     constexpr size_t calculate_new_capacity_for(size_t) const noexcept;
     std::pair<size_t, size_t> reallocate_if_needed(size_t);
 
 public:
-    template <template <typename> typename Iterator, typename... Us> requires (is_unique && is_set({ ^^Us... }) && is_subset_of({ ^^Us... }, { ^^Ts... }))
+    // TODO: better is_subset, handle multiple identical types
+    template <template <typename> typename Iterator, typename... Us> requires (is_subset_of({ ^^Us... }, { ^^Ts... }))
     class _multi_iterator
     {
-        using toa_ref_type = std::conditional_t<(is_template_of(^^Iterator, ^^iterator) || is_template_of(^^Iterator, ^^reverse_iterator)), toa<Ts...>&, const toa<Ts...>&>;
-
     public:
         static constexpr size_t size = sizeof...(Us);
 
-        _multi_iterator(toa_ref_type t, size_t offset=0zu) noexcept : m_its{(t.template begin<Ts>() + offset)...}, m_toa(t) {}
         _multi_iterator(const _multi_iterator&) noexcept = default;
         _multi_iterator(_multi_iterator&&) noexcept = default;
         _multi_iterator& operator=(const _multi_iterator&) noexcept = default;
@@ -146,22 +142,15 @@ public:
 
         ~_multi_iterator() = default;
 
-        template<size_t I> requires(I < sizeof...(Us)) auto& get() noexcept { return m_its.template get<I>(); }
-        template<size_t I> requires(I < sizeof...(Us)) const auto& get() const noexcept { return m_its.template get<I>(); }
-        template<typename T> auto& get() noexcept { return m_its.template get<T>(); }
-        template<typename T> const auto& get() const noexcept { return m_its.template get<T>(); }
+        template<size_t I> requires(I < sizeof...(Us)) const Iterator<Us...[I]>& get() const noexcept { return m_its.template get<I>(); }
+        template<typename T> const Iterator<T>& get() const noexcept { return m_its.template get<Iterator<T>>(); }
 
         void operator++() noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) ++m_its.template get<I>(); }
         void operator++(int) noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) m_its.template get<I>()++; }
         void operator--() noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) --m_its.template get<I>(); }
         void operator--(int) noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) m_its.template get<I>()--; }
-        void operator+(std::integral auto x) noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) m_its.template get<I>() += x; }
-        void operator-(std::integral auto x) noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) m_its.template get<I>() -= x; }
-
-        bool done() const noexcept requires(is_template_of(^^Iterator, ^^iterator)) { return m_its.template get<0>() != m_toa.template end<Us...[0]>(); }
-        bool done() const noexcept requires(is_template_of(^^Iterator, ^^const_iterator)) { return m_its.template get<0>() != m_toa.template cend<Us...[0]>(); }
-        bool done() const noexcept requires(is_template_of(^^Iterator, ^^reverse_iterator)) { return m_its.template get<0>() != m_toa.template rend<Us...[0]>(); }
-        bool done() const noexcept requires(is_template_of(^^Iterator, ^^const_reverse_iterator)) { return m_its.template get<0>() != m_toa.template crend<Us...[0]>(); }
+        void operator+=(std::integral auto x) noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) m_its.template get<I>() += x; }
+        void operator-=(std::integral auto x) noexcept { template for (constexpr size_t I : std::views::iota(0zu, size)) m_its.template get<I>() -= x; }
 
         bool operator==(const _multi_iterator& other) const noexcept { return get<0>() == other.template get<0>(); }
         bool operator!=(const _multi_iterator& other) const noexcept { return get<0>() != other.template get<0>(); }
@@ -172,25 +161,32 @@ public:
         auto operator<=>(const _multi_iterator& other) const noexcept { return get<0>() <=> other.template get<0>(); }
 
     private:
+        friend class toa<Ts...>;
+
+        _multi_iterator(const Iterator<Us>... those) noexcept : m_its{those...} {}
+
         tuple<Iterator<Us>...> m_its;
-        toa_ref_type m_toa;
     };
     
     template <size_t... Is> requires (((Is < sizeof...(Ts)) && ...) && are_unique({ Is... }))
     using multi_iterator_i = _multi_iterator<iterator, Ts...[Is]...>;
-    using multi_iterator = _multi_iterator<iterator, Ts...>;
+    template <typename... Us>
+    using multi_iterator = _multi_iterator<iterator, Us...>;
 
     template <size_t... Is> requires (((Is < sizeof...(Ts)) && ...) && are_unique({ Is... }))
     using const_multi_iterator_i = _multi_iterator<const_iterator, Ts...[Is]...>;
-    using const_multi_iterator = _multi_iterator<const_iterator, Ts...>;
+    template <typename... Us>
+    using const_multi_iterator = _multi_iterator<const_iterator, Us...>;
 
     template <size_t... Is> requires (((Is < sizeof...(Ts)) && ...) && are_unique({ Is... }))
     using reverse_multi_iterator_i = _multi_iterator<reverse_iterator, Ts...[Is]...>;
-    using reverse_multi_iterator = _multi_iterator<reverse_iterator, Ts...>;
+    template <typename... Us>
+    using reverse_multi_iterator = _multi_iterator<reverse_iterator, Us...>;
 
     template <size_t... Is> requires (((Is < sizeof...(Ts)) && ...) && are_unique({ Is... }))
     using const_reverse_multi_iterator_i = _multi_iterator<const_reverse_iterator, Ts...[Is]...>;
-    using const_reverse_multi_iterator = _multi_iterator<const_reverse_iterator, Ts...>;
+    template <typename... Us>
+    using const_reverse_multi_iterator = _multi_iterator<const_reverse_iterator, Us...>;
 
     static constexpr size_t size = sizeof...(Ts);
 
@@ -213,34 +209,68 @@ public:
     size_t capacity() const noexcept { return m_capacity; }
     size_t count() const noexcept { return m_count; }
 
-    template <size_t I> constexpr auto get() noexcept { return m_views.template get<I>(); }
-    template <size_t I> constexpr auto get() const noexcept { return m_views.template get<I>(); }
-    template <size_t I> constexpr Ts...[I]& cell(size_t i) noexcept { assert(i < m_count); return m_views.template get<I>()[i]; }
-    template <size_t I> constexpr const Ts...[I]& cell(size_t i) const noexcept { assert(i < m_count); return m_views.template get<I>()[i]; }
-    template <typename T> constexpr auto get() noexcept requires(is_unique) { return m_views.template get<T*>(); }
-    template <typename T> constexpr auto get() const noexcept requires(is_unique) { return m_views.template get<T*>(); }
-    template <typename T> constexpr T& cell(size_t i) noexcept requires(is_unique) { assert(i < m_count); return m_views.template get<T*>()[i]; }
-    template <typename T> constexpr const T& cell(size_t i) const noexcept requires(is_unique) { assert(i < m_count); return m_views.template get<T*>()[i]; }
+    template <size_t I>
+    constexpr auto get() noexcept { return m_views.template get<I>(); }
+    template <size_t I>
+    constexpr auto get() const noexcept { return m_views.template get<I>(); }
+    template <typename T, size_t I=0zu>
+    constexpr auto get() noexcept { return m_views.template get<T*, I>(); }
+    template <typename T, size_t I=0zu>
+    constexpr auto get() const noexcept { return m_views.template get<T*, I>(); }
 
-    template <size_t I> iterator<Ts...[I]> begin() noexcept { return iterator<Ts...[I]>(m_views.template get<I>()); }
-    template <size_t I> iterator<Ts...[I]> end() noexcept { return iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
-    template <typename T> iterator<T> begin() noexcept requires(is_unique) { return iterator<T>(m_views.template get<T*>()); }
-    template <typename T> iterator<T> end() noexcept requires(is_unique) { return iterator<T>(m_views.template get<T*>() + m_count); }
+    template <size_t I>
+    iterator<Ts...[I]> begin() noexcept { return iterator<Ts...[I]>(m_views.template get<I>()); }
+    template <size_t I>
+    iterator<Ts...[I]> end() noexcept { return iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
+    template <typename T, size_t I=0zu>
+    iterator<T> begin() noexcept { return iterator<T>(m_views.template get<T*>()); }
+    template <typename T, size_t I=0zu>
+    iterator<T> end() noexcept { return iterator<T>(m_views.template get<T*>() + m_count); }
 
-    template <size_t I> const_iterator<Ts...[I]> cbegin() const noexcept { return const_iterator<Ts...[I]>(m_views.template get<I>()); }
-    template <size_t I> const_iterator<Ts...[I]> cend() const noexcept { return const_iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
-    template <typename T> const_iterator<T> cbegin() const noexcept requires(is_unique) { return const_iterator<T>(m_views.template get<T*>()); }
-    template <typename T> const_iterator<T> cend() const noexcept requires(is_unique) { return const_iterator<T>(m_views.template get<T*>() + m_count); }
+    template <size_t I> const_iterator<Ts...[I]>
+    cbegin() const noexcept { return const_iterator<Ts...[I]>(m_views.template get<I>()); }
+    template <size_t I> const_iterator<Ts...[I]>
+    cend() const noexcept { return const_iterator<Ts...[I]>(m_views.template get<I>() + m_count); }
+    template <typename T, size_t I=0zu>
+    const_iterator<T> cbegin() const noexcept { return const_iterator<T>(m_views.template get<T*, I>()); }
+    template <typename T, size_t I=0zu>
+    const_iterator<T> cend() const noexcept { return const_iterator<T>(m_views.template get<T*, I>() + m_count); }
 
-    template <size_t I> reverse_iterator<Ts...[I]> rbegin() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() +  + static_cast<int64_t>(m_count) - 1); }
-    template <size_t I> reverse_iterator<Ts...[I]> rend() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() - 1); }
-    template <typename T> reverse_iterator<T> rbegin() noexcept requires(is_unique) { return reverse_iterator<T>(m_views.template get<T*>() + static_cast<int64_t>(m_count) - 1); }
-    template <typename T> reverse_iterator<T> rend() noexcept requires(is_unique) { return reverse_iterator<T>(m_views.template get<T*>() - 1); }
+    template <size_t I>
+    reverse_iterator<Ts...[I]> rbegin() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() +  + static_cast<int64_t>(m_count) - 1); }
+    template <size_t I>
+    reverse_iterator<Ts...[I]> rend() noexcept { return reverse_iterator<Ts...[I]>(m_views.template get<I>() - 1); }
+    template <typename T, size_t I=0zu>
+    reverse_iterator<T> rbegin() noexcept { return reverse_iterator<T>(m_views.template get<T*, I>() + static_cast<int64_t>(m_count) - 1); }
+    template <typename T, size_t I=0zu>
+    reverse_iterator<T> rend() noexcept { return reverse_iterator<T>(m_views.template get<T*, I>() - 1); }
 
-    template <size_t I> const_reverse_iterator<Ts...[I]> crbegin() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() + static_cast<int64_t>(m_count) - 1); }
-    template <size_t I> const_reverse_iterator<Ts...[I]> crend() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() - 1); }
-    template <typename T> const_reverse_iterator<T> crbegin() const noexcept requires(is_unique) { return const_reverse_iterator<T>(m_views.template get<T*>() + static_cast<int64_t>(m_count) - 1); }
-    template <typename T> const_reverse_iterator<T> crend() const noexcept requires(is_unique) { return const_reverse_iterator<T>(m_views.template get<T*>() - 1); }
+    template <size_t I>
+    const_reverse_iterator<Ts...[I]> crbegin() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() + static_cast<int64_t>(m_count) - 1); }
+    template <size_t I>
+    const_reverse_iterator<Ts...[I]> crend() const noexcept { return const_reverse_iterator<Ts...[I]>(m_views.template get<I>() - 1); }
+    template <typename T, size_t I=0zu>
+    const_reverse_iterator<T> crbegin() const noexcept { return const_reverse_iterator<T>(m_views.template get<T*, I>() + static_cast<int64_t>(m_count) - 1); }
+    template <typename T, size_t I=0zu>
+    const_reverse_iterator<T> crend() const noexcept { return const_reverse_iterator<T>(m_views.template get<T*, I>() - 1); }
+
+    // TODO: handle identical types
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    multi_iterator<Us...> begin() noexcept { return multi_iterator<Us...>(begin<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    multi_iterator<Us...> end() noexcept { return multi_iterator<Us...>(end<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    const_multi_iterator<Us...> cbegin() noexcept { return const_multi_iterator<Us...>(cbegin<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    const_multi_iterator<Us...> cend() noexcept { return const_multi_iterator<Us...>(cend<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    reverse_multi_iterator<Us...> rbegin() noexcept { return reverse_multi_iterator<Us...>(rbegin<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    reverse_multi_iterator<Us...> rend() noexcept { return reverse_multi_iterator<Us...>(rend<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    const_reverse_multi_iterator<Us...> crbegin() noexcept { return const_reverse_multi_iterator<Us...>(crbegin<Us>()...); }
+    template<typename... Us> requires (sizeof...(Us) > 1zu)
+    const_reverse_multi_iterator<Us...> crend() noexcept { return const_reverse_multi_iterator<Us...>(crend<Us>()...); }
 
     void swap(toa& other) noexcept;
     friend void swap(toa& a, toa& b) noexcept { a.swap(b); }

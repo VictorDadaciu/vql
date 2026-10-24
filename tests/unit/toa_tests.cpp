@@ -2,6 +2,37 @@
 
 #include <vql/toa.h>
 
+namespace vtl
+{
+template<typename T>
+struct suite_helper<T*>
+{
+    inline static std::string to_string(const T* v)
+    {
+        return std::format("address: {}", reinterpret_cast<std::intptr_t>(v));
+    }
+
+    inline static bool equals(const T* a, const T* b)
+    {
+        return a == b;
+    }
+};
+
+template<typename T>
+struct suite_helper<vql::_iterator_base<T>>
+{
+    inline static std::string to_string(const vql::_iterator_base<T>& v)
+    {
+        return suite_helper<T*>::to_string(&v);
+    }
+
+    inline static bool equals(const vql::_iterator_base<T>& a, const vql::_iterator_base<T>& b)
+    {
+        return a == b;
+    }
+};
+}
+
 class toa_tests : public vtl::suite
 {
 public:
@@ -10,6 +41,12 @@ public:
     VTL_TEST(constructor);
     VTL_TEST(push_back);
     VTL_TEST(append);
+    VTL_TEST(resize);
+    VTL_TEST(clear);
+    VTL_TEST(reserve);
+    VTL_TEST(shrink_to_fit);
+    VTL_TEST(iterate);
+    VTL_TEST(multi_iterate);
     VTL_TESTS_END();
 
     void static_vals()
@@ -70,13 +107,7 @@ public:
             VTL_EQUALS(t.count(), c);
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(c));
 
-            VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-            VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-            VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
             VTL_EQUALS(t.get<0>()[i], 0zu);
-            VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-            VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-            VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
             VTL_EQUALS(t.get<1>()[i], '\0');
         }
         for (size_t i = 10zu; i < 20zu; ++i, ++c)
@@ -86,13 +117,7 @@ public:
             VTL_EQUALS(t.count(), c);
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(c));
             
-            VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-            VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-            VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
             VTL_EQUALS(t.get<0>()[i], i);
-            VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-            VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-            VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
             VTL_EQUALS(t.get<1>()[i], static_cast<char>(i));
         }
         for (size_t i = 20zu; i < 30zu; ++i, ++c)
@@ -101,13 +126,7 @@ public:
             VTL_EQUALS(t.count(), c);
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(c));
             
-            VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-            VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-            VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
             VTL_EQUALS(t.get<0>()[i], i);
-            VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-            VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-            VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
             VTL_EQUALS(t.get<1>()[i], static_cast<char>(i));
         }
         for (size_t i = 30zu; i < 40zu; ++i, ++c)
@@ -116,13 +135,7 @@ public:
             VTL_EQUALS(t.count(), c);
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(c));
             
-            VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-            VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-            VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
             VTL_EQUALS(t.get<0>()[i], i);
-            VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-            VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-            VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
             VTL_EQUALS(t.get<1>()[i], static_cast<char>(i));
         }
         for (size_t i = 40zu; i < 50zu; ++i, ++c)
@@ -131,13 +144,7 @@ public:
             VTL_EQUALS(t.count(), c);
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(c));
             
-            VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-            VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-            VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
             VTL_EQUALS(t.get<0>()[i], 42zu);
-            VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-            VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-            VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
             VTL_EQUALS(t.get<1>()[i], 'c');
         }
     }
@@ -154,13 +161,7 @@ public:
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(t.count()));
             for (size_t i = from; i < t.count(); ++i)
             {
-                VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-                VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-                VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
                 VTL_EQUALS(t.get<0>()[i], 0zu);
-                VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-                VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-                VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
                 VTL_EQUALS(t.get<1>()[i], '\0');
             }
         }
@@ -172,13 +173,7 @@ public:
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(t.count()));
             for (size_t i = from; i < t.count(); ++i)
             {
-                VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-                VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-                VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
                 VTL_EQUALS(t.get<0>()[i], 67zu);
-                VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-                VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-                VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
                 VTL_EQUALS(t.get<1>()[i], 'c');
             }
         }
@@ -189,13 +184,7 @@ public:
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(t.count()));
             for (size_t i = from; i < t.count(); ++i)
             {
-                VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-                VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-                VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
                 VTL_EQUALS(t.get<0>()[i], 42zu);
-                VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-                VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-                VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
                 VTL_EQUALS(t.get<1>()[i], 't');
             }
         }
@@ -209,13 +198,7 @@ public:
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(t.count()));
             for (size_t i = from; i < t.count(); ++i)
             {
-                VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-                VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-                VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
                 VTL_EQUALS(t.get<0>()[i], 432zu);
-                VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-                VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-                VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
                 VTL_EQUALS(t.get<1>()[i], 'o');
             }
         }
@@ -228,15 +211,148 @@ public:
             VTL_EQUALS(t.capacity(), vql::next_power_of_2(t.count()));
             for (size_t i = from; i < t.count(); ++i)
             {
-                VTL_EQUALS(t.get<0>()[i], t.cell<0>(i));
-                VTL_EQUALS(t.get<size_t>()[i], t.cell<size_t>(i));
-                VTL_EQUALS(t.get<0>()[i], t.cell<size_t>(i));
                 VTL_EQUALS(t.get<0>()[i], 9000zu);
-                VTL_EQUALS(t.get<1>()[i], t.cell<1>(i));
-                VTL_EQUALS(t.get<char>()[i], t.cell<char>(i));
-                VTL_EQUALS(t.get<1>()[i], t.cell<char>(i));
                 VTL_EQUALS(t.get<1>()[i], 'z');
             }
+        }
+    }
+
+    void resize()
+    {
+        vql::toa<size_t, char> t(20zu, 5zu, 'c');
+        VTL_EQUALS(t.count(), 20zu);
+        VTL_EQUALS(t.capacity(), 32zu);
+        {
+            t.resize(30zu);
+            VTL_EQUALS(t.count(), 30zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.resize(30zu);
+            VTL_EQUALS(t.count(), 30zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.resize(20zu);
+            VTL_EQUALS(t.count(), 20zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+        }
+        {
+            auto tuple = vql::make_tuple(10zu, 't');
+            t.resize(30zu, tuple);
+            VTL_EQUALS(t.count(), 30zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.resize(30zu, tuple);
+            VTL_EQUALS(t.count(), 30zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.resize(20zu, tuple);
+            VTL_EQUALS(t.count(), 20zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+        }
+        {
+            t.resize(30zu, 20zu, 'w');
+            VTL_EQUALS(t.count(), 30zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.resize(30zu, 20zu, 'w');
+            VTL_EQUALS(t.count(), 30zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.resize(20zu, 20zu, 'w');
+            VTL_EQUALS(t.count(), 20zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+        }
+    }
+
+    void clear()
+    {
+        {
+            vql::toa<size_t, char> t(20zu);
+            VTL_EQUALS(t.count(), 0zu);
+            VTL_EQUALS(t.capacity(), 20zu);
+            t.clear();
+            VTL_EQUALS(t.count(), 0zu);
+            VTL_EQUALS(t.capacity(), 20zu);
+        }
+        {
+            vql::toa<size_t, char> t(20zu, 5zu, 'c');
+            VTL_EQUALS(t.count(), 20zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+            t.clear();
+            VTL_EQUALS(t.count(), 0zu);
+            VTL_EQUALS(t.capacity(), 32zu);
+        }
+    }
+
+    void reserve()
+    {
+        vql::toa<size_t, char> t(20zu);
+        VTL_EQUALS(t.count(), 0zu);
+        VTL_EQUALS(t.capacity(), 20zu);
+        t.reserve(1zu);
+        VTL_EQUALS(t.count(), 0zu);
+        VTL_EQUALS(t.capacity(), 20zu);
+        t.reserve(20zu);
+        VTL_EQUALS(t.count(), 0zu);
+        VTL_EQUALS(t.capacity(), 20zu);
+        t.reserve(32zu);
+        VTL_EQUALS(t.count(), 0zu);
+        VTL_EQUALS(t.capacity(), 32zu);
+    }
+
+    void shrink_to_fit()
+    {
+        vql::toa<size_t, char> t(20zu, 20zu, 'c');
+        VTL_EQUALS(t.count(), 20zu);
+        VTL_EQUALS(t.capacity(), 32zu);
+        t.shrink_to_fit();
+        VTL_EQUALS(t.count(), 20zu);
+        VTL_EQUALS(t.capacity(), 20zu);
+        t.resize(10zu);
+        VTL_EQUALS(t.count(), 10zu);
+        VTL_EQUALS(t.capacity(), 20zu);
+        t.shrink_to_fit();
+        VTL_EQUALS(t.count(), 10zu);
+        VTL_EQUALS(t.capacity(), 10zu);
+        t.clear();
+        VTL_EQUALS(t.count(), 0zu);
+        VTL_EQUALS(t.capacity(), 10zu);
+        t.shrink_to_fit();
+        VTL_EQUALS(t.count(), 0zu);
+        VTL_EQUALS(t.capacity(), 1zu);
+    }
+
+    void iterate()
+    {
+        vql::toa<size_t, char> t(20zu, 20zu, 'c');
+        size_t grow = 0zu;
+        for (auto it = t.begin<size_t>(); it != t.end<size_t>(); ++it)
+        {
+            VTL_EQUALS(*it, 20zu);
+            *it = grow++;
+        }
+        grow = 0zu;
+        for (auto it = t.cbegin<size_t>(); it != t.cend<size_t>(); ++it)
+            VTL_EQUALS(*it, grow++);
+        for (auto it = t.crbegin<size_t>(); it != t.crend<size_t>(); ++it)
+            VTL_EQUALS(*it, --grow);
+    }
+
+    void multi_iterate()
+    {
+        vql::toa<size_t, char> t(20zu, 20zu, 'c');
+        size_t grow = 0zu;
+        for (auto it = t.begin<size_t, char>(); it != t.end<size_t, char>(); ++it)
+        {
+            VTL_EQUALS(*it.get<size_t>(), 20zu);
+            VTL_EQUALS(*it.get<char>(), 'c');
+            *it.get<size_t>() = grow;
+            *it.get<char>() = 'a' + grow++;
+        }
+        grow = 0zu;
+        for (auto it = t.cbegin<size_t, char>(); it != t.cend<size_t, char>(); ++it)
+        {
+            VTL_EQUALS(*it.get<size_t>(), grow);
+            VTL_EQUALS(*it.get<char>(), static_cast<char>('a' + grow++));
+        }
+        for (auto it = t.crbegin<size_t, char>(); it != t.crend<size_t, char>(); ++it)
+        {
+            VTL_EQUALS(*it.get<size_t>(), --grow);
+            VTL_EQUALS(*it.get<char>(), static_cast<char>('a' + grow));
         }
     }
 };

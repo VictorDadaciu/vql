@@ -27,7 +27,6 @@ class tuple
     }
     storage m_data;
 
-    static constexpr bool is_unique = is_set({ ^^Ts... });
     static constexpr auto members = std::define_static_array(nonstatic_data_members_of(^^storage, std::meta::access_context::unchecked()));
 
     static consteval size_t index_of_type(meta_info, size_t=0zu) noexcept;
@@ -68,8 +67,10 @@ public:
     template<size_t I> requires(I < sizeof...(Ts))
     constexpr const auto& get() const noexcept { return m_data.[:members[I]:]; }
 
-    template<typename T> constexpr auto& get() noexcept requires(is_unique) { return get<index_of_type(^^T)>(); }
-    template<typename T> constexpr const auto& get() const noexcept requires(is_unique) { return get<index_of_type(^^T)>(); }
+    template<typename T, size_t I=0zu>
+    constexpr auto& get() noexcept { return get<index_of_type(^^T, I)>(); }
+    template<typename T, size_t I=0zu>
+    constexpr const auto& get() const noexcept { return get<index_of_type(^^T, I)>(); }
     
     void swap(tuple& other) noexcept((std::is_nothrow_swappable_v<Ts> && ...))
     {

@@ -6,6 +6,12 @@ add_executable(vql_tests
     unit/tuple_tests.cpp
 )
 
+target_include_directories(
+    vql_tests
+    PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
+)
+
 target_link_libraries(vql_tests
     vql
     ${VQL_VTL_TARGET}

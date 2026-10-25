@@ -1,37 +1,4 @@
-#include <vtl/suite.h>
-
-#include <vql/toa.h>
-
-namespace vtl
-{
-template<typename T>
-struct suite_helper<T*>
-{
-    inline static std::string to_string(const T* v)
-    {
-        return std::format("address: {}", reinterpret_cast<std::intptr_t>(v));
-    }
-
-    inline static bool equals(const T* a, const T* b)
-    {
-        return a == b;
-    }
-};
-
-template<typename T>
-struct suite_helper<vql::_iterator_base<T>>
-{
-    inline static std::string to_string(const vql::_iterator_base<T>& v)
-    {
-        return suite_helper<T*>::to_string(&v);
-    }
-
-    inline static bool equals(const vql::_iterator_base<T>& a, const vql::_iterator_base<T>& b)
-    {
-        return a == b;
-    }
-};
-}
+#include "suite_helpers.h"
 
 class toa_tests : public vtl::suite
 {

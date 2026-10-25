@@ -81,20 +81,35 @@ consteval bool is_set(meta_infos types)
     return true;
 }
 
+namespace detail
+{
+    consteval bool is_subset_of_helper(meta_info inner, meta_infos outer, std::vector<size_t> to_exclude)
+    {
+        for (size_t i = 0; i < outer.size(); ++i)
+        {
+            bool skip{};
+            for (size_t e : to_exclude)
+            {
+                if (e == i)
+                {
+                    skip = true;
+                    break;
+                }
+            }
+            if (skip) continue;
+            else if (outer[i] == inner) return true;
+        }
+        return false;
+    }
+}
+
 consteval bool is_subset_of(meta_infos inner, meta_infos outer)
 {
-    for (meta_info i : inner)
+    std::vector<size_t> to_exclude;
+    for (size_t i = 0zu; i < inner.size(); ++i)
     {
-        bool found = false;
-        for (meta_info o : outer)
-        {
-            if (i == o)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found) return false;
+        if (!detail::is_subset_of_helper(inner[i], outer, to_exclude)) return false;
+        to_exclude.push_back(i);
     }
     return true;
 }

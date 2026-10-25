@@ -128,7 +128,6 @@ class toa
     std::pair<size_t, size_t> reallocate_if_needed(size_t);
 
 public:
-    // TODO: better is_subset, handle multiple identical types
     template <template <typename> typename Iterator, typename... Us> requires (is_subset_of({ ^^Us... }, { ^^Ts... }))
     class _multi_iterator
     {

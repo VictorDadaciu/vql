@@ -31,6 +31,8 @@ consteval bool is_nested_in(meta_info, meta_info);
 consteval bool is_set(meta_infos);
 consteval bool is_subset_of(meta_infos, meta_infos);
 
+consteval std::vector<size_t> subset_indices(meta_infos, meta_infos);
+
 consteval meta_info base_of(meta_info, size_t=0zu);
 
 struct alignas(cache_line_size) cache_aligned_bytes

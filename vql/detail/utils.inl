@@ -83,7 +83,7 @@ consteval bool is_set(meta_infos types)
 
 namespace detail
 {
-    consteval bool is_subset_of_helper(meta_info inner, meta_infos outer, std::vector<size_t> to_exclude)
+    consteval bool subset_helper(meta_info inner, meta_infos outer, std::vector<size_t> to_exclude)
     {
         for (size_t i = 0; i < outer.size(); ++i)
         {
@@ -103,15 +103,21 @@ namespace detail
     }
 }
 
-consteval bool is_subset_of(meta_infos inner, meta_infos outer)
+consteval std::vector<size_t> subset_indices(meta_infos inner, meta_infos outer)
 {
-    std::vector<size_t> to_exclude;
+    std::vector<size_t> indices;
     for (size_t i = 0zu; i < inner.size(); ++i)
     {
-        if (!detail::is_subset_of_helper(inner[i], outer, to_exclude)) return false;
-        to_exclude.push_back(i);
+        if (!detail::subset_helper(inner[i], outer, indices))
+            return std::vector<size_t>();
+        indices.push_back(i);
     }
-    return true;
+    return indices;
+}
+
+consteval bool is_subset_of(meta_infos inner, meta_infos outer)
+{
+    return subset_indices(inner, outer).size() > 0zu;
 }
 
 consteval meta_info base_of(meta_info r, size_t index)

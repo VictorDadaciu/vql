@@ -18,10 +18,12 @@ class tuple
     {
         std::vector<meta_info> member_specs;
 
-        template for (size_t i = 0zu; meta_info type : { ^^Ts... })
+        template for (size_t I = 0zu; meta_info type : { ^^Ts... })
+        {
             member_specs.push_back(data_member_spec(type, {
-                .name = std::format("item{}", i++)
+                .name = std::format("item{}", I++)
             }));
+        }
 
         std::meta::define_aggregate(^^storage, member_specs);
     }

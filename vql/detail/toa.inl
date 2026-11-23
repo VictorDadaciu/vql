@@ -11,7 +11,7 @@ void toa<Ts...>::allocate_and_initialize_views()
     size_t total{};
     template for (constexpr auto I : std::views::iota(0zu, size))
     {
-        sizes[I] = next_multiple_of_cache_line_size(sizeof(Ts...[I]) * m_capacity);
+        sizes[I] = next_multiple_of_power_of_2<cache_line_size>(sizeof(Ts...[I]) * m_capacity);
         total += sizes[I];
     }
     m_data = allocate_smart_cache_aligned_bytes(total);

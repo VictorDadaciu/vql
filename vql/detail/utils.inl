@@ -11,9 +11,10 @@ consteval bool are_unique(const std::vector<size_t>& nums)
     return true;
 }
 
-constexpr size_t next_multiple_of_cache_line_size(size_t x)
+template<size_t PowerOf2> requires (is_power_of_2(PowerOf2))
+constexpr size_t next_multiple_of_power_of_2(size_t x)
 {
-    return (x + cache_line_size - 1) & -cache_line_size;
+    return (x + PowerOf2 - 1) & -PowerOf2;
 }
 
 constexpr size_t next_power_of_2(size_t x)
@@ -26,6 +27,11 @@ constexpr size_t next_power_of_2(size_t x)
     x |= x >> 16;
     x |= x >> 32;
     return ++x;
+}
+
+constexpr bool is_power_of_2(size_t x)
+{
+    return x == next_power_of_2(x);
 }
 
 consteval bool has_physical_size(meta_info r)
@@ -74,6 +80,9 @@ consteval bool is_nested_in(meta_info nested, meta_info nest)
 
 consteval bool is_set(meta_infos types)
 {
+    if (types.size() == 0)
+        return true;
+
     for (size_t i = 0; i < types.size() - 1; ++i)
         for (size_t j = i + 1; j < types.size(); ++j)
             if (types[i] == types[j])

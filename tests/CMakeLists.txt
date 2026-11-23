@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.21..4.4)
 
 add_executable(vql_tests
     test_runner.cpp
-    unit/toa_tests.cpp
+    unit/table_tests.cpp
     unit/tuple_tests.cpp
+    unit/utils_tests.cpp
 )
 
 target_include_directories(
@@ -15,6 +16,17 @@ target_include_directories(
 target_link_libraries(vql_tests
     vql
     ${VQL_VTL_TARGET}
+)
+
+set_property(TARGET vql_tests
+    PROPERTY CXX_STANDARD 26
+)
+target_compile_options(vql_tests
+PRIVATE
+    -Wall
+    -fno-omit-frame-pointer
+    -static-libasan
+    -fdiagnostics-all-candidates
 )
 
 option(VQL_RUN_TESTS "Run tests after build" ${VQL_IS_TOP_LEVEL})

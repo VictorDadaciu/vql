@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vql/tuple.h>
-#include <vql/toa.h>
 
 #include <vtl/suite.h>
 
@@ -108,17 +107,17 @@ struct suite_helper<T*>
     }
 };
 
-template<typename T>
-struct suite_helper<vql::_iterator_base<T>>
-{
-    inline static std::string to_string(const vql::_iterator_base<T>& v)
-    {
-        return suite_helper<T*>::to_string(&v);
-    }
-
-    inline static bool equals(const vql::_iterator_base<T>& a, const vql::_iterator_base<T>& b)
-    {
-        return a == b;
-    }
-};
+// template<typename T>
+// struct suite_helper<vql::_iterator_base<T>>
+// {
+//     inline static std::string to_string(const vql::_iterator_base<T>& v)
+//     {
+//         return suite_helper<T*>::to_string(&v);
+//     }
+// 
+//     inline static bool equals(const vql::_iterator_base<T>& a, const vql::_iterator_base<T>& b)
+//     {
+//         return a == b;
+//     }
+// };
 }

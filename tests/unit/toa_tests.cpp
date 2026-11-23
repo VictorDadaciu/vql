@@ -119,7 +119,6 @@ public:
     void append()
     {
         vql::toa<size_t, char> t{};
-        size_t c = 1zu;
         size_t from;
         {
             from = t.append(10zu);

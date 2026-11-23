@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <meta>
 #include <memory>
+#include <cstdlib>
 
 namespace vql
 {
@@ -20,8 +22,11 @@ static constexpr size_t cache_line_size = 64zu;
 
 consteval bool are_unique(std::vector<size_t>);
 
-constexpr size_t next_multiple_of_cache_line_size(size_t);
 constexpr size_t next_power_of_2(size_t);
+constexpr bool is_power_of_2(size_t);
+
+template<size_t Alignment = cache_line_size> requires (is_power_of_2(Alignment))
+constexpr size_t next_multiple_of_power_of_2(size_t);
 
 consteval bool has_physical_size(meta_info);
 consteval bool is_template_of(meta_info, meta_info);
@@ -48,6 +53,25 @@ inline std::byte* allocate_cache_aligned_bytes(size_t byte_size)
 inline std::unique_ptr<cache_aligned_bytes[]> allocate_smart_cache_aligned_bytes(size_t byte_size)
 {
     return std::make_unique<cache_aligned_bytes[]>(byte_size / cache_line_size);
+}
+
+namespace detail
+{
+    struct aligned_deleter final
+    {
+        void operator()(std::byte* ptr)
+        {
+            std::free(ptr);
+        }
+    };
+}
+
+using aligned_bytes = std::unique_ptr<std::byte, detail::aligned_deleter>;
+template<size_t Alignment = cache_line_size> requires (is_power_of_2(Alignment))
+inline aligned_bytes allocate_aligned_bytes(size_t byte_size)
+{
+    assert(byte_size > 0zu);
+    return aligned_bytes(static_cast<std::byte*>(std::aligned_alloc(Alignment, next_multiple_of_power_of_2<Alignment>(byte_size))));
 }
 }
 

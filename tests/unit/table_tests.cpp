@@ -1,4 +1,5 @@
 #include "vql/table.h"
+#include "vql/debug.h"
 
 #include "suite_helpers.h"
 
@@ -52,6 +53,8 @@ struct table_tests : vtl::suite
 
         vql::table<character>::row row;
         VTL_EQUALS(sizeof(row), 48zu);
+
+        // vql::debug::print<vql::table<character>>();
     }
 };
 

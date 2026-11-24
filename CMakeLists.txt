@@ -19,6 +19,7 @@ include(submodules)
 
 add_library(vql INTERFACE
     vql/db.h
+    vql/debug.h
     vql/iterator.h
     vql/table.h
     vql/toa.h
